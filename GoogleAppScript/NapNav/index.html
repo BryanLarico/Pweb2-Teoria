@@ -1,19 +1,27 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <base target="_top">
     <title>MAPS</title>
     <?!= include('css') ?>
-    
   </head>
   <body>
     <h1>NapNav</h1>
     <?!= include('js') ?>
     <div class="input-group mb-3">
-        <span class="input-group-text">Ingresa tu destino:</span>
-        <input type="text" class="form-control" aria-label="Ubicación" aria-describedby="basic-addon2">
+        <span class="input-group-text">Ingresa el enlace de la ubicación de destino:</span>
+        <input id="enlaceInput" type="text" class="form-control" aria-label="Ubicación" aria-describedby="basic-addon2">
     </div>
+    <button class="aceptarButton" id="aceptar" onclick="mostrarCoordenadas()">Aceptar</button>
     <div id="map"></div>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBDaeWicvigtP9xPv919E-RNoxfvC-Hqik&callback=iniciarMap"></script>
+    <div class="input-container">
+      <label for="distanciaInput">¿A qué distancia quieres ser despertado? (Km):</label>
+      <input id="distanciaInput" type="number" min="0" placeholder="Ejemplo: 3.5">
+    </div>
+    <button class="aceptarButton" id="distance" onclick="compararDistancia()">Aceptar</button>
+    <div class="alarma">
+        <img src="https://images.vexels.com/media/users/3/149788/isolated/preview/392ae9cfa4b776ec2eac86fe92f7f3a6-ilustracion-de-luz-de-alarma-de-bombero.png" alt="Alarma">
+    </div>
+    <audio id="audio" src="https://ukulelehunt.com/wp-content/uploads/2018/09/1-Caug.mp3" loop></audio>
   </body>
 </html>

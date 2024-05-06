@@ -1,29 +1,202 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Calcula distancias con el método de haversine (comprobado) -->
 <script>
-    function getLocation() {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(showPosition);
+  function calcularDistancia(lat1, lon1, lat2, lon2) {
+    const radioTierra = 6371; // Radio medio de la Tierra en kilómetros
+
+    const latitud1Rad = gradosARadianes(lat1);
+    const latitud2Rad = gradosARadianes(lat2);
+    const diferenciaLatitudRad = gradosARadianes(lat2 - lat1);
+    const diferenciaLongitudRad = gradosARadianes(lon2 - lon1);
+
+    console.log('Latitud 1 en radianes:', latitud1Rad);
+    console.log('Latitud 2 en radianes:', latitud2Rad);
+    console.log('Diferencia de latitud en radianes:', diferenciaLatitudRad);
+    console.log('Diferencia de longitud en radianes:', diferenciaLongitudRad);
+
+
+    // Calcular la distancia usando la fórmula de la distancia haversine
+    const a = Math.sin(diferenciaLatitudRad / 2) * Math.sin(diferenciaLatitudRad / 2) +
+              Math.cos(latitud1Rad) * Math.cos(latitud2Rad) *
+              Math.sin(diferenciaLongitudRad / 2) * Math.sin(diferenciaLongitudRad / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distancia = radioTierra * c;
+
+    console.log('La distancia entre los dos lugares es:', distancia.toFixed(2), 'kilómetros');
+
+    return distancia;
+  }
+
+  function gradosARadianes(grados) {
+      return grados * (Math.PI / 180);
+  }
+
+  function compararDistancia() {
+    var distanciaUsuario = parseFloat(document.getElementById('distanciaInput').value);
+    var coordenadasEnlace = obtenerLatitudLongitudDesdeEnlace();
+    
+    // Si no se pudieron obtener las coordenadas del enlace, mostrar un mensaje de error
+    if (!coordenadasEnlace) {
+        alert('No se pudieron obtener las coordenadas del enlace. Asegúrate de ingresar un enlace válido de Google Maps.');
+        return;
+    }
+    console.log('COORDENADAS DEL ENLACE:', coordenadasEnlace);
+    
+    // Obtener la ubicación actual del usuario y calcular la distancia una vez que se resuelva la promesa
+    obtenerUbicacion().then(function(ubicacionActual) {
+        // Calcular la distancia entre la ubicación actual y las coordenadas del enlace
+        var distanciaActual = calcularDistancia(ubicacionActual.latitud, ubicacionActual.longitud, coordenadasEnlace.latitud, coordenadasEnlace.longitud);
+        var audio = document.getElementById('audio');
+
+        console.log('Distancia esperada:', distanciaUsuario.toFixed(2), 'km');
+        console.log('Distancia actual:', distanciaActual.toFixed(2), 'km');
+        
+        // Mostrar un mensaje comparando las distancias
+        if (distanciaActual < distanciaUsuario) {
+            audio.play();
+            alert('La distancia actual (' + distanciaActual.toFixed(2) + ' km) es menor que la distancia introducida por el usuario (' + distanciaUsuario.toFixed(2) + ' km). HORA DE LEVANTARSEEEEEEEEEEE!!!!!!');
+        } else {
+            setInterval(compararDistancia, 5000);
+        }
+    }).catch(function(error) {
+        console.error("Error al obtener la ubicación:", error);
+    });
+    
+    // Establecer el intervalo para que la función se ejecute cada 5 segundos
+ 
+  }
+
+  function toggleAlarm() {
+    var audio = document.getElementById('audio');
+    if (audio.paused) {
+        audio.play();
     } else {
-      alert("Geolocalización no es compatible en este navegador.");
+        audio.pause();
+        audio.currentTime = 0;
     }
   }
 
-  function showPosition(position) {
-    console.log("Latitud: " + position.coords.latitude + ", Longitud: " + position.coords.longitude);
+  function obtenerUbicacion() {
+      return new Promise((resolve, reject) => {
+          if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(function(position) {
+                  const latitud = position.coords.latitude;
+                  const longitud = position.coords.longitude;
+                  console.log("OBTENER U SOLITARIO --> Latitud: " + latitud + ", Longitud: " + longitud);
+                  
+                  var ubicacion = { latitud: latitud, longitud: longitud };
+                  resolve(ubicacion);
+              }, function(error) {
+                  console.error("Error al obtener la ubicación:", error);
+                  reject(error);
+              });
+          } else {
+              console.error("Geolocalización no es compatible en este navegador.");
+              reject(new Error("Geolocalización no es compatible en este navegador."));
+          }
+      });
   }
 
-  getLocation(); // Solicitar permiso al cargar la página
+  setInterval(() => {
+      obtenerUbicacion()
+          .then(ubicacion => {
+              console.log("Ubicación actual:", ubicacion);
+              // Aquí puedes hacer lo que necesites con la ubicación obtenida
+          })
+          .catch(error => {
+              console.error("Error al obtener la ubicación:", error);
+          });
+  }, 3000);
 </script>
+
+
+<!-- Pide permiso para acceder a la ubicación y la muestra en el mapa -->
 <script>
-  function iniciarMap() {
-    var coord = {lat:-16.4060763 ,lng:-71.5247181};
-    var map = new google.maps.Map(document.getElementById('map'),{
-      zoom: 15,
-      center: coord
-    });
-    var marker = new google.maps.Marker({
-      position: coord,
-      map: map
-    });
-  }
+  var map;
+  var marker;
+    function initMap() {
+        getLocation(); // Solicita el permiso al cargar la página
+    }
+
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(showPosition);
+        } else {
+            alert("Tu navegador no admite la geolocalización. Habilita la geolocalización para acceder a esta función.");
+        }
+    }
+
+    function showPosition(position) {
+        const latitud = position.coords.latitude;
+        const longitud = position.coords.longitude;
+        var latLng = { lat: position.coords.latitude, lng: position.coords.longitude };
+            
+        iniciarMap(latLng); // Llama a iniciarMap con la ubicación del cliente
+
+        console.log("Latitud: " + latitud + ", Longitud: " + longitud);
+    }
+
+    getLocation(); // Solicita el permiso al cargar la página
+
+    function iniciarMap(coord) {
+        map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 17,
+            center: coord
+        });
+
+        marker = new google.maps.Marker({
+            position: coord,
+            map: map
+        });
+    }
+
+    function actualizarUbicacion(coord) {
+        map.setCenter(coord);
+        marker.setPosition(coord);
+    }
+
+    function obtenerUbicacionActual() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const latitud = position.coords.latitude;
+                const longitud = position.coords.longitude;
+                console.log("Latitud: " + latitud + ", Longitud: " + longitud);
+
+                var nuevaUbicacion = { lat: latitud, lng: longitud };
+                actualizarUbicacion(nuevaUbicacion);
+            }, function(error) {
+                console.error("Error al obtener la ubicación:", error);
+            });
+        } else {
+            console.error("Geolocalización no es compatible en este navegador.");
+        }
+    }
+
+    setInterval(obtenerUbicacionActual, 5000);
+
+
+    function obtenerLatitudLongitudDesdeEnlace() {
+        var enlace = document.getElementById('enlaceInput').value;
+
+        var coordenadasRegex = /@(-?\d+\.\d+),(-?\d+\.\d+)/;
+        var coordenadasMatch = enlace.match(coordenadasRegex);
+        
+        // Verificar si se encontraron las coordenadas
+        if (coordenadasMatch && coordenadasMatch.length >= 3) {
+          var latitud = parseFloat(coordenadasMatch[1]);
+          var longitud = parseFloat(coordenadasMatch[2]);
+          
+          // Devolver un objeto con la latitud y la longitud como números
+          return { latitud: latitud, longitud: longitud };
+        } else {
+          return null;
+        }
+    }
+
+    // Función para mostrar las coordenadas en la consola
+    function mostrarCoordenadas() {
+        var coordenadas = obtenerLatitudLongitudDesdeEnlace();
+        console.log('ENLACE: Latitud: ' + coordenadas.latitud + ', Longitud: ' + coordenadas.longitud);
+    }
 </script>
