@@ -19,9 +19,20 @@
       <input id="distanciaInput" type="number" min="0" placeholder="Ejemplo: 3.5">
     </div>
     <button class="aceptarButton" id="distance" onclick="compararDistancia()">Aceptar</button>
-    <div class="alarma">
+    <div class="alarma" onclick="toggleAlarm()">
         <img src="https://images.vexels.com/media/users/3/149788/isolated/preview/392ae9cfa4b776ec2eac86fe92f7f3a6-ilustracion-de-luz-de-alarma-de-bombero.png" alt="Alarma">
     </div>
     <audio id="audio" src="https://ukulelehunt.com/wp-content/uploads/2018/09/1-Caug.mp3" loop></audio>
+    <script>
+      function toggleAlarm() {
+        var audio = document.getElementById('audio');
+        if (audio.paused) {
+            audio.play();
+        } else {
+            audio.pause();
+            audio.currentTime = 0;
+        }
+      }
+    </script>
   </body>
 </html>
